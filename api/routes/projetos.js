@@ -15,7 +15,6 @@ const {
 
 const router = express.Router()
 
-// Lê o projeto do arquivo e devolve uma instância das classes (ou null)
 async function obterProjeto(id) {
     const dados = await armazenamento.buscarPorId(id)
 
@@ -33,8 +32,6 @@ async function salvarProjeto(projeto) {
 function numeroDeTarefaValido(projeto, numero) {
     return Number.isInteger(numero) && numero >= 1 && numero <= projeto.tarefas.length
 }
-
-// ---------- Projetos ----------
 
 router.get("/", async (req, res) => {
     const projetos = await armazenamento.listar()
@@ -92,8 +89,6 @@ router.delete("/:id", async (req, res, next) => {
     res.json({ mensagem: "Projeto removido" })
 })
 
-// ---------- Integrantes ----------
-
 router.get("/:id/integrantes", async (req, res, next) => {
     const projeto = await armazenamento.buscarPorId(Number(req.params.id))
 
@@ -118,8 +113,6 @@ router.post("/:id/integrantes", validarIntegrante, async (req, res, next) => {
 
     res.status(201).json({ mensagem, integrante: pessoa.paraObjeto() })
 })
-
-// ---------- Tarefas ----------
 
 router.get("/:id/tarefas", async (req, res, next) => {
     const projeto = await armazenamento.buscarPorId(Number(req.params.id))

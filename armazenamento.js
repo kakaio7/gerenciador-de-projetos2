@@ -7,8 +7,6 @@ async function listar() {
         const conteudo = await fs.readFile(ARQUIVO, "utf-8")
         return JSON.parse(conteudo)
     } catch (erro) {
-        // Só o arquivo que ainda não existe vira lista vazia.
-        // Qualquer outro erro (ex.: JSON quebrado) sobe, para não apagarmos dados por engano.
         if (erro.code === "ENOENT") {
             return []
         }

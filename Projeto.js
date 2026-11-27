@@ -2,20 +2,32 @@ const { Pessoa } = require("./Pessoa")
 const Tarefa = require("./Tarefa")
 
 class Projeto {
-    static quantidadeProjetos = 0
-
+    #id
     #nome
     #tipo
+    #concluido
     #integrantes
     #tarefas
 
     constructor(nome, tipo) {
         this.nome = nome
         this.tipo = tipo
+        this.#id = null
+        this.#concluido = false
         this.#integrantes = []
         this.#tarefas = []
+    }
 
-        Projeto.quantidadeProjetos++
+    get id() {
+        return this.#id
+    }
+
+    set id(id) {
+        if (!Number.isInteger(id) || id < 1) {
+            throw new Error("O id do projeto deve ser um número inteiro positivo.")
+        }
+
+        this.#id = id
     }
 
     get nome() {
@@ -40,6 +52,18 @@ class Projeto {
         }
 
         this.#tipo = tipo.trim()
+    }
+
+    get concluido() {
+        return this.#concluido
+    }
+
+    set concluido(concluido) {
+        if (typeof concluido !== "boolean") {
+            throw new Error("A situação do projeto deve ser verdadeira ou falsa.")
+        }
+
+        this.#concluido = concluido
     }
 
     get integrantes() {
@@ -76,6 +100,7 @@ class Projeto {
         }
 
         const tarefa = this.#tarefas[numero - 1]
+
         if (!tarefa) {
             return "Tarefa não encontrada."
         }
@@ -97,6 +122,7 @@ class Projeto {
         if (!Number.isInteger(numero) || numero < 1) {
             return "Tarefa não encontrada."
         }
+
         const tarefa = this.#tarefas[numero - 1]
 
         if (!tarefa) {
@@ -108,44 +134,60 @@ class Projeto {
         return `Tarefa "${tarefa.titulo}" concluída.`
     }
 
+    // A classe só devolve o texto; quem imprime é o index.js
     listarIntegrantes() {
-
         if (this.#integrantes.length === 0) {
-            console.log("\nNenhum integrante cadastrado.")
-            return
+            return "\nNenhum integrante cadastrado."
         }
 
-        console.log("\n--- INTEGRANTES ---")
+        let texto = "\n--- INTEGRANTES ---"
 
         this.#integrantes.forEach((pessoa, index) => {
-            console.log(
-                `${index + 1} - ${pessoa.apresentar()}`
-            )
+            texto += `\n${index + 1} - ${pessoa.apresentar()}`
         })
+
+        return texto
     }
 
     listarTarefas() {
-
         if (this.#tarefas.length === 0) {
-            console.log("\nNenhuma tarefa cadastrada.")
-            return
+            return "\nNenhuma tarefa cadastrada."
         }
 
-        console.log("\n--- TAREFAS ---")
+        let texto = "\n--- TAREFAS ---"
 
         this.#tarefas.forEach((tarefa, index) => {
-            console.log(
-                `${index + 1} - ${tarefa.apresentar()}`
-            )
+            texto += `\n${index + 1} - ${tarefa.apresentar()}`
         })
+
+        return texto
     }
 
     apresentarProjeto() {
         return `Projeto: ${this.nome} | Tipo: ${this.tipo}`
     }
 
-    static consultarQuantidadeProjetos() {
-        return Projeto.quantidadeProjetos
+    // Objeto simples, pronto para o JSON.stringify gravar no arquivo
+    paraObjeto() {
+        const integrantes = []
+        const tarefas = []
+
+        this.#integrantes.forEach(pessoa => {
+            integrantes.push(pessoa.paraObjeto())
+        })
+
+        this.#tarefas.forEach(tarefa => {
+            tarefas.push(tarefa.paraObjeto())
+        })
+
+        return {
+            id: this.#id,
+            nome: this.nome,
+            tipo: this.tipo,
+            concluido: this.#concluido,
+            integrantes: integrantes,
+            tarefas: tarefas
+        }
     }
 }
 

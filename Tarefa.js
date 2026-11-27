@@ -58,6 +58,20 @@ class Tarefa {
 
         return `Tarefa: ${this.titulo} | Estado: ${estado} | Responsável: ${responsavel}`
     }
+
+    paraObjeto() {
+        let responsavel = null
+
+        if (this.#responsavel) {
+            responsavel = this.#responsavel.nome
+        }
+
+        return {
+            titulo: this.titulo,
+            concluida: this.#concluida,
+            responsavel: responsavel
+        }
+    }
 }
 
 module.exports = Tarefa

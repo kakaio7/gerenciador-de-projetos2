@@ -1,13 +1,13 @@
 {
   "name": "gerenciador-de-projetos",
   "version": "1.0.0",
-  "description": "Gerenciador de projetos em JavaScript com POO e prompt-sync",
+  "description": "Gerenciador de projetos em JavaScript com POO, prompt-sync, Express e fs",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
     "api": "node api/server.js",
-    "api:dev": "node --watch api/server.js",
+    "api:dev": "node --watch --env-file=.env api/server.js",
     "test": "node --test"
   },
   "type": "commonjs",

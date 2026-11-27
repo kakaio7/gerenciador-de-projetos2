@@ -1,16 +1,27 @@
 const prompt = require("prompt-sync")()
 
-const { Lider, Integrante } = require("./Pessoa")
+const { criarPessoa } = require("./Pessoa")
 const Tarefa = require("./Tarefa")
 const ProjetoFactory = require("./ProjetoFactory")
-const Projeto = require("./Projeto")
+const armazenamento = require("./armazenamento")
 
-console.log("=================================")
-console.log("     GERENCIADOR DE PROJETOS")
-console.log("=================================")
+// Projeto que está aberto no momento (null = nenhum)
+let projeto = null
 
-function criarProjeto() {
+function verificarProjeto() {
+    if (!projeto) {
+        console.log("\nNenhum projeto ativo.")
+        return false
+    }
 
+    return true
+}
+
+async function salvarProjeto() {
+    await armazenamento.atualizar(projeto.id, projeto.paraObjeto())
+}
+
+async function criarProjeto() {
     const nome = prompt("Digite o nome do projeto: ")
 
     console.log("\nTipos de projeto:")
@@ -27,243 +38,223 @@ function criarProjeto() {
         tipoProjeto = "escolar"
     } else {
         console.log("Tipo de projeto inválido.")
-        return null
+        return
     }
 
-    const projeto = ProjetoFactory.criarProjeto(
-        tipoProjeto,
-        nome
-    )
+    const novoProjeto = ProjetoFactory.criarProjeto(tipoProjeto, nome)
 
-    if (!projeto) {
+    if (!novoProjeto) {
         console.log("Não foi possível criar o projeto.")
-        return null
+        return
     }
+
+    const salvo = await armazenamento.salvar(novoProjeto.paraObjeto())
+    novoProjeto.id = salvo.id
+    projeto = novoProjeto
 
     console.log("\nProjeto criado com sucesso!")
     console.log(`Nome: ${projeto.nome}`)
     console.log(`Tipo: ${projeto.tipo}`)
-
-    return projeto
 }
 
-function adicionarIntegrante(projeto) {
-
+async function adicionarIntegrante() {
     console.log("\n1 - Líder")
     console.log("2 - Integrante")
 
     const tipo = prompt("Escolha o tipo: ")
     const nome = prompt("Digite o nome: ")
 
-    let pessoa
+    let funcao
 
     if (tipo === "1") {
-        pessoa = new Lider(nome)
+        funcao = "lider"
     } else if (tipo === "2") {
-        pessoa = new Integrante(nome)
+        funcao = "integrante"
     } else {
         console.log("Tipo inválido.")
         return
     }
 
-    console.log(
-        projeto.adicionarIntegrante(pessoa)
-    )
+    const pessoa = criarPessoa(funcao, nome)
+
+    console.log(projeto.adicionarIntegrante(pessoa))
+    await salvarProjeto()
 }
 
-function adicionarTarefa(projeto) {
-
-    const titulo = prompt(
-        "Digite o título da tarefa: "
-    )
-
+async function adicionarTarefa() {
+    const titulo = prompt("Digite o título da tarefa: ")
     const tarefa = new Tarefa(titulo)
 
-    console.log(
-        projeto.adicionarTarefa(tarefa)
-    )
+    console.log(projeto.adicionarTarefa(tarefa))
+    await salvarProjeto()
 }
 
-function verificarProjeto(projeto) {
+async function atribuirTarefa() {
+    console.log(projeto.listarTarefas())
 
-    if (!projeto) {
-        console.log("\nNenhum projeto ativo.")
-        return false
+    if (projeto.tarefas.length === 0) {
+        return
     }
 
-    return true
+    const numero = Number(prompt("\nDigite o número da tarefa: "))
+
+    console.log(projeto.listarIntegrantes())
+
+    if (projeto.integrantes.length === 0) {
+        return
+    }
+
+    const nome = prompt("\nDigite o nome do responsável: ")
+
+    console.log(projeto.atribuirTarefa(numero, nome))
+    await salvarProjeto()
 }
 
-function mostrarMenu() {
+async function concluirTarefa() {
+    console.log(projeto.listarTarefas())
 
+    if (projeto.tarefas.length === 0) {
+        return
+    }
+
+    const numero = Number(prompt("\nDigite o número da tarefa concluída: "))
+
+    console.log(projeto.concluirTarefa(numero))
+    await salvarProjeto()
+}
+
+async function listarIntegrantes() {
+    console.log(projeto.listarIntegrantes())
+}
+
+async function listarTarefas() {
+    console.log(projeto.listarTarefas())
+}
+
+async function concluirProjeto() {
+    const nome = projeto.nome
+
+    projeto.concluido = true
+    await salvarProjeto()
+
+    projeto = null
+
+    console.log(`\nProjeto "${nome}" concluído com sucesso!`)
+}
+
+async function verQuantidadeProjetos() {
+    const projetos = await armazenamento.listar()
+
+    console.log(`\nQuantidade de projetos salvos: ${projetos.length}`)
+}
+
+async function mostrarInformacoes() {
+    let situacao = "Em andamento"
+
+    if (projeto.concluido) {
+        situacao = "Concluído"
+    }
+
+    console.log("\n--- INFORMAÇÕES DO PROJETO ---")
+    console.log(`Nome: ${projeto.nome}`)
+    console.log(`Tipo: ${projeto.tipo}`)
+    console.log(`Situação: ${situacao}`)
+    console.log(`Integrantes: ${projeto.integrantes.length}`)
+    console.log(`Tarefas: ${projeto.tarefas.length}`)
+    console.log(projeto.apresentarProjeto())
+}
+
+async function abrirProjetoSalvo() {
+    const salvos = await armazenamento.listar()
+
+    if (salvos.length === 0) {
+        console.log("\nNenhum projeto salvo.")
+        return
+    }
+
+    console.log("\n--- PROJETOS SALVOS ---")
+
+    salvos.forEach(p => {
+        console.log(`${p.id} - ${p.nome} (${p.tipo})`)
+    })
+
+    const id = Number(prompt("\nDigite o id do projeto: "))
+    const dados = await armazenamento.buscarPorId(id)
+
+    if (!dados) {
+        console.log("\nProjeto não encontrado.")
+        return
+    }
+
+    projeto = ProjetoFactory.reconstruir(dados)
+
+    console.log(`\nProjeto "${projeto.nome}" aberto.`)
+}
+
+// Cada opção do menu: código, texto, se precisa de projeto aberto e a função
+const opcoes = [
+    { codigo: "1", texto: "Adicionar projeto", precisaProjeto: false, executar: criarProjeto },
+    { codigo: "2", texto: "Adicionar integrante", precisaProjeto: true, executar: adicionarIntegrante },
+    { codigo: "3", texto: "Adicionar tarefa", precisaProjeto: true, executar: adicionarTarefa },
+    { codigo: "4", texto: "Atribuir tarefa", precisaProjeto: true, executar: atribuirTarefa },
+    { codigo: "5", texto: "Concluir tarefa", precisaProjeto: true, executar: concluirTarefa },
+    { codigo: "6", texto: "Listar integrantes", precisaProjeto: true, executar: listarIntegrantes },
+    { codigo: "7", texto: "Listar tarefas", precisaProjeto: true, executar: listarTarefas },
+    { codigo: "8", texto: "Concluir projeto", precisaProjeto: true, executar: concluirProjeto },
+    { codigo: "9", texto: "Ver quantidade de projetos", precisaProjeto: false, executar: verQuantidadeProjetos },
+    { codigo: "10", texto: "Informações do projeto", precisaProjeto: true, executar: mostrarInformacoes },
+    { codigo: "11", texto: "Abrir projeto salvo", precisaProjeto: false, executar: abrirProjetoSalvo }
+]
+
+function mostrarMenu() {
     console.log("\n=================================")
     console.log("              MENU")
     console.log("=================================")
 
-    console.log("1 - Adicionar projeto")
-    console.log("2 - Adicionar integrante")
-    console.log("3 - Adicionar tarefa")
-    console.log("4 - Atribuir tarefa")
-    console.log("5 - Concluir tarefa")
-    console.log("6 - Listar integrantes")
-    console.log("7 - Listar tarefas")
-    console.log("8 - Concluir projeto")
-    console.log("9 - Ver quantidade de projetos")
-    console.log("10 - Informações do projeto")
+    opcoes.forEach(opcao => {
+        console.log(`${opcao.codigo} - ${opcao.texto}`)
+    })
+
     console.log("0 - Sair")
 }
 
-let projeto = criarProjeto()
+async function main() {
+    console.log("=================================")
+    console.log("     GERENCIADOR DE PROJETOS")
+    console.log("=================================")
 
-if (!projeto) {
-    process.exit()
-}
+    let codigo = ""
 
-let opcao = ""
+    while (codigo !== "0") {
+        mostrarMenu()
 
-while (opcao !== "0") {
+        codigo = prompt("\nEscolha uma opção: ")
 
-    mostrarMenu()
-
-    opcao = prompt("\nEscolha uma opção: ")
-
-    if (opcao === "1") {
-
-        const novoProjeto = criarProjeto()
-
-        if (novoProjeto) {
-            projeto = novoProjeto
+        if (codigo === "0") {
+            break
         }
 
-    } else if (opcao === "2") {
+        const escolhida = opcoes.find(opcao => opcao.codigo === codigo)
 
-        if (!verificarProjeto(projeto)) {
+        if (!escolhida) {
+            console.log("\nOpção inválida.")
             continue
         }
 
-        adicionarIntegrante(projeto)
-
-    } else if (opcao === "3") {
-
-        if (!verificarProjeto(projeto)) {
+        if (escolhida.precisaProjeto && !verificarProjeto()) {
             continue
         }
 
-        adicionarTarefa(projeto)
-
-    } else if (opcao === "4") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
+        try {
+            await escolhida.executar()
+        } catch (erro) {
+            console.log(`\nErro: ${erro.message}`)
         }
-
-        projeto.listarTarefas()
-
-        if (projeto.tarefas.length === 0) {
-            continue
-        }
-
-        const numero = Number(
-            prompt("\nDigite o número da tarefa: ")
-        )
-
-        projeto.listarIntegrantes()
-
-        if (projeto.integrantes.length === 0) {
-            continue
-        }
-
-        const nome = prompt(
-            "\nDigite o nome do responsável: "
-        )
-
-        console.log(
-            projeto.atribuirTarefa(numero, nome)
-        )
-
-    } else if (opcao === "5") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
-        }
-
-        projeto.listarTarefas()
-
-        if (projeto.tarefas.length === 0) {
-            continue
-        }
-
-        const numero = Number(
-            prompt("\nDigite o número da tarefa concluída: ")
-        )
-
-        console.log(
-            projeto.concluirTarefa(numero)
-        )
-
-    } else if (opcao === "6") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
-        }
-
-        projeto.listarIntegrantes()
-
-    } else if (opcao === "7") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
-        }
-
-        projeto.listarTarefas()
-
-    } else if (opcao === "8") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
-        }
-
-        const nome = projeto.nome
-
-        projeto = null
-
-        console.log(
-            `\nProjeto "${nome}" concluído com sucesso!`
-        )
-
-    } else if (opcao === "9") {
-
-        console.log(
-            `\nQuantidade de projetos criados: ` +
-            `${Projeto.consultarQuantidadeProjetos()}`
-        )
-
-    } else if (opcao === "10") {
-
-        if (!verificarProjeto(projeto)) {
-            continue
-        }
-
-        console.log("\n--- INFORMAÇÕES DO PROJETO ---")
-        console.log(`Nome: ${projeto.nome}`)
-        console.log(`Tipo: ${projeto.tipo}`)
-        console.log(
-            `Integrantes: ${projeto.integrantes.length}`
-        )
-        console.log(
-            `Tarefas: ${projeto.tarefas.length}`
-        )
-
-        console.log(
-            projeto.apresentarProjeto()
-        )
-
-    } else if (opcao !== "0") {
-
-        console.log("\nOpção inválida.")
     }
+
+    console.log("\n=================================")
+    console.log("      SISTEMA ENCERRADO")
+    console.log("=================================")
 }
 
-console.log("\n=================================")
-console.log("      SISTEMA ENCERRADO")
-console.log("=================================")
+main()

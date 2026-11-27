@@ -5,7 +5,6 @@ const Tarefa = require("./Tarefa")
 const ProjetoFactory = require("./ProjetoFactory")
 const armazenamento = require("./armazenamento")
 
-// Projeto que está aberto no momento (null = nenhum)
 let projeto = null
 
 function verificarProjeto() {

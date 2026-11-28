@@ -23,7 +23,6 @@ class ProjetoFactory {
         return new ClasseProjeto(nome)
     }
 
-    // Faz o caminho contrário do paraObjeto(): objeto do arquivo -> instância
     static reconstruir(dados) {
         const projeto = ProjetoFactory.criarProjeto(dados.tipo, dados.nome)
 

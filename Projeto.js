@@ -134,7 +134,6 @@ class Projeto {
         return `Tarefa "${tarefa.titulo}" concluída.`
     }
 
-    // A classe só devolve o texto; quem imprime é o index.js
     listarIntegrantes() {
         if (this.#integrantes.length === 0) {
             return "\nNenhum integrante cadastrado."
@@ -167,7 +166,6 @@ class Projeto {
         return `Projeto: ${this.nome} | Tipo: ${this.tipo}`
     }
 
-    // Objeto simples, pronto para o JSON.stringify gravar no arquivo
     paraObjeto() {
         const integrantes = []
         const tarefas = []

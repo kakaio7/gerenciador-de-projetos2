@@ -4,10 +4,10 @@
   "description": "Gerenciador de projetos em JavaScript com POO, prompt-sync, Express e fs",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
-    "api": "node api/server.js",
-    "api:dev": "node --watch --env-file=.env api/server.js",
+    "start": "node cli.js",
+    "dev": "node --watch cli.js",
+    "api": "node servidor.js",
+    "api:dev": "node --watch --env-file=.env servidor.js",
     "test": "node --test"
   },
   "type": "commonjs",

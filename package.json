@@ -1,0 +1,17 @@
+{
+  "name": "gerenciador-de-projetos",
+  "version": "1.0.0",
+  "description": "Gerenciador de projetos em JavaScript com POO, prompt-sync, Express e fs",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/cli.js",
+    "dev": "node --watch src/cli.js",
+    "api": "node src/server.js",
+    "api:dev": "node --watch src/server.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "prompt-sync": "^4.2.0"
+  }
+}
